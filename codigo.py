@@ -1,10 +1,8 @@
-# conversor_xml__xlsx
 import streamlit as st
 import xml.etree.ElementTree as ET
 import pandas as pd
 from io import BytesIO
 
-# Namespace do Excel XML
 ns = {
     "ss": "urn:schemas-microsoft-com:office:spreadsheet"
 }
@@ -17,7 +15,7 @@ def converter_xml_para_df(arquivo_xml):
 
     for row in root.findall(".//ss:Row", ns):
         linha = []
-        col_atual = 1  # Excel começa na coluna 1
+        col_atual = 1
 
         for cell in row.findall("ss:Cell", ns):
             index = cell.get(
@@ -31,53 +29,58 @@ def converter_xml_para_df(arquivo_xml):
                     col_atual += 1
 
             data = cell.find("ss:Data", ns)
-            linha.append(data.text if data is not None else "")
+
+            # 🔒 NUNCA converter tipo
+            valor = data.text if data is not None else ""
+            linha.append(str(valor))
+
             col_atual += 1
 
         linhas.append(linha)
 
-    df = pd.DataFrame(linhas)
+    # 🔒 FORÇA tudo como string
+    df = pd.DataFrame(linhas, dtype=str)
 
-    # Primeira linha como cabeçalho
-    df.columns = df.iloc[0]
-    df = df[1:].reset_index(drop=True)
+    # Cabeçalho SEM alterar conteúdo
+    df.columns = df.iloc[0].astype(str)
+    df = df.iloc[1:].reset_index(drop=True)
 
     return df
 
 
 def front():
     st.set_page_config(
-        page_title="Conversor XML → XLSX",
+        page_title="Conversor XML → XLSX (Seguro)",
         layout="wide"
     )
 
-    st.title("Conversor de XML (Excel) para XLSX")
+    st.title("Conversor XML → XLSX (sem alterar dados)")
 
     arquivo = st.file_uploader(
-        "Faça upload do arquivo XML",
+        "Faça upload do XML",
         type=["xml"]
     )
 
-    if arquivo is not None:
-        with st.spinner("Convertendo arquivo..."):
-            df = converter_xml_para_df(arquivo)
+    if arquivo:
+        df = converter_xml_para_df(arquivo)
 
-        st.success("Arquivo convertido com sucesso!")
+        st.success("Conversão concluída sem alteração de dados")
 
-        st.subheader("Pré-visualização dos dados")
         st.dataframe(df, use_container_width=True)
 
-        # Salva em memória
         output = BytesIO()
-        df.to_excel(output, index=False)
+
+        # 🔒 Garante que o Excel receba tudo como TEXTO
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False)
+
         output.seek(0)
 
         st.download_button(
-            label="⬇️ Baixar arquivo XLSX",
+            "⬇️ Baixar XLSX (dados preservados)",
             data=output,
-            file_name="arquivo_convertido.xlsx",
+            file_name="arquivo_preservado.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
 
 front()
