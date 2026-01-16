@@ -64,7 +64,7 @@ def converter_xml_para_df(arquivo_xml):
 
 
 def converter_colunas_float(df):
-    colunas_float = ["Valor Faturado", "Quantidade de Faturas"]
+    colunas_float = ["Valor Faturas", "Quantidade Faturas"]
 
     for col in colunas_float:
         if col in df.columns:
@@ -82,11 +82,11 @@ def converter_colunas_float(df):
 
 def front():
     st.set_page_config(
-        page_title="Conversor XML → XLSX",
+        page_title="Conversor XML - XLSX",
         layout="wide"
     )
 
-    st.title("Conversor XML → XLSX (fiel à base)")
+    st.title("Conversor XML - XLSX (fiel à base)")
 
     arquivo = st.file_uploader("Faça upload do arquivo XML", type=["xml"])
 
@@ -102,8 +102,8 @@ def front():
         # Exibição pt-BR (sem quebrar tipo float)
         st.dataframe(
             df.style.format({
-                "Valor Faturado": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                "Quantidade de Faturas": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                "Valor Faturas": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                "Quantidade Faturas": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
             }),
             use_container_width=True
         )
