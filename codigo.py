@@ -100,13 +100,17 @@ def front():
         st.subheader("Pré-visualização dos dados")
 
         # Exibição pt-BR (sem quebrar tipo float)
-        st.dataframe(
-            df.style.format({
-                "Valor Faturas": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-                "Quantidade Faturas": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
-            }),
-            use_container_width=True
-        )
+       formatacao = {}if "Valor Faturas" in df.columns:
+    formatacao["Valor Faturas"] = (
+        "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    )if "Quantidade Faturas" in df.columns:
+    formatacao["Quantidade Faturas"] = (
+        "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    )if formatacao:
+    st.dataframe(
+        df.style.format(formatacao),
+        use_container_width=True else:
+    st.dataframe(df, use_container_width=True)
 
         # Download XLSX
         output = BytesIO()
