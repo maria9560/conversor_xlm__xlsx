@@ -83,4 +83,7 @@ def front():
             "⬇️ Baixar XLSX fiel à base",
             data=output,
             file_name="arquivo_fiel_final.xlsx",
-            m
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+front()
