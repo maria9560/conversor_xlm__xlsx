@@ -12,6 +12,7 @@ def converter_xml_para_df(arquivo_xml):
     root = tree.getroot()
 
     linhas = []
+    max_colunas = 0
 
     for row in root.findall(".//ss:Row", ns):
         linha = []
@@ -29,20 +30,22 @@ def converter_xml_para_df(arquivo_xml):
                     col_atual += 1
 
             data = cell.find("ss:Data", ns)
-
-            # 🔒 NUNCA converter tipo
             valor = data.text if data is not None else ""
             linha.append(str(valor))
-
             col_atual += 1
 
+        max_colunas = max(max_colunas, len(linha))
         linhas.append(linha)
 
-    # 🔒 FORÇA tudo como string
+    # 🔒 NORMALIZA TODAS AS LINHAS
+    for linha in linhas:
+        while len(linha) < max_colunas:
+            linha.append("")
+
     df = pd.DataFrame(linhas, dtype=str)
 
-    # Cabeçalho SEM alterar conteúdo
-    df.columns = df.iloc[0].astype(str)
+    # Cabeçalho
+    df.columns = df.iloc[0]
     df = df.iloc[1:].reset_index(drop=True)
 
     return df
@@ -50,36 +53,31 @@ def converter_xml_para_df(arquivo_xml):
 
 def front():
     st.set_page_config(
-        page_title="Conversor XML → XLSX (Seguro)",
+        page_title="Conversor XML → XLSX (alinhamento seguro)",
         layout="wide"
     )
 
-    st.title("Conversor XML → XLSX (sem alterar dados)")
+    st.title("Conversor XML → XLSX (sem troca de valores)")
 
-    arquivo = st.file_uploader(
-        "Faça upload do XML",
-        type=["xml"]
-    )
+    arquivo = st.file_uploader("Upload do XML", type=["xml"])
 
     if arquivo:
         df = converter_xml_para_df(arquivo)
 
-        st.success("Conversão concluída sem alteração de dados")
+        st.success("Conversão concluída — colunas preservadas")
 
         st.dataframe(df, use_container_width=True)
 
         output = BytesIO()
-
-        # 🔒 Garante que o Excel receba tudo como TEXTO
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
 
         output.seek(0)
 
         st.download_button(
-            "⬇️ Baixar XLSX (dados preservados)",
+            "⬇️ Baixar XLSX correto",
             data=output,
-            file_name="arquivo_preservado.xlsx",
+            file_name="arquivo_sem_troca.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
