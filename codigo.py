@@ -3,8 +3,10 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 from io import BytesIO
 
-ns = {"ss": "urn:schemas-microsoft-com:office:spreadsheet"}
+# Namespace do Excel XML
+NS = {"ss": "urn:schemas-microsoft-com:office:spreadsheet"}
 SS = "urn:schemas-microsoft-com:office:spreadsheet"
+
 
 def converter_xml_para_df(arquivo_xml):
     tree = ET.parse(arquivo_xml)
@@ -12,34 +14,39 @@ def converter_xml_para_df(arquivo_xml):
 
     linhas_dict = {}
     max_colunas = 0
+    contador_linhas = 1
 
-    for row in root.findall(".//ss:Row", ns):
+    for row in root.findall(".//ss:Row", NS):
         linha = []
         col_atual = 1
 
-        # 🔥 RESPEITA O INDEX DA LINHA
+        # Index real da linha
         row_index = row.get(f"{{{SS}}}Index")
-        row_index = int(row_index) if row_index else None
+        if row_index:
+            row_index = int(row_index)
+        else:
+            row_index = contador_linhas
 
-        for cell in row.findall("ss:Cell", ns):
+        contador_linhas += 1
+
+        for cell in row.findall("ss:Cell", NS):
             cell_index = cell.get(f"{{{SS}}}Index")
+
             if cell_index:
                 cell_index = int(cell_index)
                 while col_atual < cell_index:
                     linha.append("")
                     col_atual += 1
 
-            data = cell.find("ss:Data", ns)
+            data = cell.find("ss:Data", NS)
             valor = data.text if data is not None else ""
             linha.append(str(valor))
             col_atual += 1
 
         max_colunas = max(max_colunas, len(linha))
+        linhas_dict[row_index] = linha
 
-        # Guarda pela posição REAL da linha
-        linhas_dict[row_index if row_index else len(linhas_dict) + 1] = linha
-
-    # 🔒 Reconstrói respeitando ordem REAL
+    # Reconstrói respeitando ordem real
     linhas_ordenadas = []
     for i in sorted(linhas_dict.keys()):
         linha = linhas_dict[i]
@@ -56,23 +63,52 @@ def converter_xml_para_df(arquivo_xml):
     return df
 
 
+def converter_colunas_float(df):
+    colunas_float = ["Valor Faturado", "Quantidade de Faturas"]
+
+    for col in colunas_float:
+        if col in df.columns:
+            df[col] = (
+                df[col]
+                .astype(str)
+                .str.replace(",", "", regex=False)
+                .str.strip()
+                .replace("", "0")
+                .astype(float)
+            )
+
+    return df
+
+
 def front():
     st.set_page_config(
-        page_title="Conversor XML → XLSX (linhas corretas)",
+        page_title="Conversor XML → XLSX",
         layout="wide"
     )
 
-    st.title("Conversor XML → XLSX (ordem real preservada)")
+    st.title("Conversor XML → XLSX (fiel à base)")
 
-    arquivo = st.file_uploader("Upload do XML", type=["xml"])
+    arquivo = st.file_uploader("Faça upload do arquivo XML", type=["xml"])
 
     if arquivo:
-        df = converter_xml_para_df(arquivo)
+        with st.spinner("Convertendo arquivo..."):
+            df = converter_xml_para_df(arquivo)
+            df = converter_colunas_float(df)
 
-        st.success("Conversão concluída — linhas e valores corretos")
+        st.success("Conversão concluída com sucesso!")
 
-        st.dataframe(df, use_container_width=True)
+        st.subheader("Pré-visualização dos dados")
 
+        # Exibição pt-BR (sem quebrar tipo float)
+        st.dataframe(
+            df.style.format({
+                "Valor Faturado": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+                "Quantidade de Faturas": "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."),
+            }),
+            use_container_width=True
+        )
+
+        # Download XLSX
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
@@ -80,10 +116,11 @@ def front():
         output.seek(0)
 
         st.download_button(
-            "⬇️ Baixar XLSX fiel à base",
+            label="Baixar arquivo XLSX",
             data=output,
-            file_name="arquivo_fiel_final.xlsx",
+            file_name="arquivo_convertido.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
 
 front()
