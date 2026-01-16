@@ -3,29 +3,29 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 from io import BytesIO
 
-ns = {
-    "ss": "urn:schemas-microsoft-com:office:spreadsheet"
-}
+ns = {"ss": "urn:schemas-microsoft-com:office:spreadsheet"}
+SS = "urn:schemas-microsoft-com:office:spreadsheet"
 
 def converter_xml_para_df(arquivo_xml):
     tree = ET.parse(arquivo_xml)
     root = tree.getroot()
 
-    linhas = []
+    linhas_dict = {}
     max_colunas = 0
 
     for row in root.findall(".//ss:Row", ns):
         linha = []
         col_atual = 1
 
-        for cell in row.findall("ss:Cell", ns):
-            index = cell.get(
-                "{urn:schemas-microsoft-com:office:spreadsheet}Index"
-            )
+        # 🔥 RESPEITA O INDEX DA LINHA
+        row_index = row.get(f"{{{SS}}}Index")
+        row_index = int(row_index) if row_index else None
 
-            if index:
-                index = int(index)
-                while col_atual < index:
+        for cell in row.findall("ss:Cell", ns):
+            cell_index = cell.get(f"{{{SS}}}Index")
+            if cell_index:
+                cell_index = int(cell_index)
+                while col_atual < cell_index:
                     linha.append("")
                     col_atual += 1
 
@@ -35,14 +35,19 @@ def converter_xml_para_df(arquivo_xml):
             col_atual += 1
 
         max_colunas = max(max_colunas, len(linha))
-        linhas.append(linha)
 
-    # 🔒 NORMALIZA TODAS AS LINHAS
-    for linha in linhas:
+        # Guarda pela posição REAL da linha
+        linhas_dict[row_index if row_index else len(linhas_dict) + 1] = linha
+
+    # 🔒 Reconstrói respeitando ordem REAL
+    linhas_ordenadas = []
+    for i in sorted(linhas_dict.keys()):
+        linha = linhas_dict[i]
         while len(linha) < max_colunas:
             linha.append("")
+        linhas_ordenadas.append(linha)
 
-    df = pd.DataFrame(linhas, dtype=str)
+    df = pd.DataFrame(linhas_ordenadas, dtype=str)
 
     # Cabeçalho
     df.columns = df.iloc[0]
@@ -53,18 +58,18 @@ def converter_xml_para_df(arquivo_xml):
 
 def front():
     st.set_page_config(
-        page_title="Conversor XML → XLSX (alinhamento seguro)",
+        page_title="Conversor XML → XLSX (linhas corretas)",
         layout="wide"
     )
 
-    st.title("Conversor XML → XLSX (sem troca de valores)")
+    st.title("Conversor XML → XLSX (ordem real preservada)")
 
     arquivo = st.file_uploader("Upload do XML", type=["xml"])
 
     if arquivo:
         df = converter_xml_para_df(arquivo)
 
-        st.success("Conversão concluída — colunas preservadas")
+        st.success("Conversão concluída — linhas e valores corretos")
 
         st.dataframe(df, use_container_width=True)
 
@@ -75,10 +80,7 @@ def front():
         output.seek(0)
 
         st.download_button(
-            "⬇️ Baixar XLSX correto",
+            "⬇️ Baixar XLSX fiel à base",
             data=output,
-            file_name="arquivo_sem_troca.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-front()
+            file_name="arquivo_fiel_final.xlsx",
+            m
