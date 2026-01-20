@@ -71,6 +71,13 @@ def converter_colunas_float(df):
     return df
 
 
+def formatar_ptbr(valor):
+    try:
+        return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except Exception:
+        return valor
+
+
 def front():
     st.set_page_config(
         page_title="Conversor XML - XLSX",
@@ -89,28 +96,18 @@ def front():
         st.success("Conversão concluída com sucesso!")
         st.subheader("Pré-visualização dos dados")
 
-        # Formatação pt-BR
-        formatacao = {}
+       
+        df_exibicao = df.copy()
 
-        if "Valor Faturas" in df.columns:
-            formatacao["Valor Faturas"] = (
-                "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            )
+        if "Valor Faturas" in df_exibicao.columns:
+            df_exibicao["Valor Faturas"] = df_exibicao["Valor Faturas"].apply(formatar_ptbr)
 
-        if "Quantidade Faturas" in df.columns:
-            formatacao["Quantidade Faturas"] = (
-                "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            )
+        if "Quantidade Faturas" in df_exibicao.columns:
+            df_exibicao["Quantidade Faturas"] = df_exibicao["Quantidade Faturas"].apply(formatar_ptbr)
 
-        if formatacao:
-            st.dataframe(
-                df.style.format(formatacao),
-                use_container_width=True
-            )
-        else:
-            st.dataframe(df, use_container_width=True)
+        st.dataframe(df_exibicao, use_container_width=True)
 
-        # Download XLSX
+        
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
