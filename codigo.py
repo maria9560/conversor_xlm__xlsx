@@ -20,13 +20,8 @@ def converter_xml_para_df(arquivo_xml):
         linha = []
         col_atual = 1
 
-        # Index real da linha
         row_index = row.get(f"{{{SS}}}Index")
-        if row_index:
-            row_index = int(row_index)
-        else:
-            row_index = contador_linhas
-
+        row_index = int(row_index) if row_index else contador_linhas
         contador_linhas += 1
 
         for cell in row.findall("ss:Cell", NS):
@@ -46,7 +41,6 @@ def converter_xml_para_df(arquivo_xml):
         max_colunas = max(max_colunas, len(linha))
         linhas_dict[row_index] = linha
 
-    # Reconstrói respeitando ordem real
     linhas_ordenadas = []
     for i in sorted(linhas_dict.keys()):
         linha = linhas_dict[i]
@@ -55,8 +49,6 @@ def converter_xml_para_df(arquivo_xml):
         linhas_ordenadas.append(linha)
 
     df = pd.DataFrame(linhas_ordenadas, dtype=str)
-
-    # Cabeçalho
     df.columns = df.iloc[0]
     df = df.iloc[1:].reset_index(drop=True)
 
@@ -76,7 +68,6 @@ def converter_colunas_float(df):
                 .replace("", "0")
                 .astype(float)
             )
-
     return df
 
 
@@ -96,31 +87,28 @@ def front():
             df = converter_colunas_float(df)
 
         st.success("Conversão concluída com sucesso!")
-
         st.subheader("Pré-visualização dos dados")
 
-        # Exibição pt-BR (sem quebrar tipo float)
-      
-formatacao = {}
+        # Formatação pt-BR
+        formatacao = {}
 
-if "Valor Faturas" in df.columns:
-    formatacao["Valor Faturas"] = (
-        "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    )
+        if "Valor Faturas" in df.columns:
+            formatacao["Valor Faturas"] = (
+                "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            )
 
-if "Quantidade Faturas" in df.columns:
-    formatacao["Quantidade Faturas"] = (
-        "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    )
+        if "Quantidade Faturas" in df.columns:
+            formatacao["Quantidade Faturas"] = (
+                "{:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            )
 
-if formatacao:
-    st.dataframe(
-        df.style.format(formatacao),
-        use_container_width=True
-    )
-else:
-    st.dataframe(df, use_container_width=True)
-
+        if formatacao:
+            st.dataframe(
+                df.style.format(formatacao),
+                use_container_width=True
+            )
+        else:
+            st.dataframe(df, use_container_width=True)
 
         # Download XLSX
         output = BytesIO()
