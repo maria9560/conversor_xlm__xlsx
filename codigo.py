@@ -9,8 +9,8 @@ SS = "urn:schemas-microsoft-com:office:spreadsheet"
 
 
 def converter_xml_para_df(arquivo_xml):
-    tree = ET.parse(arquivo_xml)
-    root = tree.getroot()
+    conteudo = arquivo_xml.read()
+    root = ET.fromstring(conteudo)
 
     linhas_dict = {}
     max_colunas = 0
