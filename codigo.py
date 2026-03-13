@@ -56,18 +56,24 @@ def converter_xml_para_df(arquivo_xml):
 
 
 def converter_colunas_float(df):
-    colunas_float = ["Valor Faturas", "Quantidade Faturas"]
 
-    for col in colunas_float:
-        if col in df.columns:
-            df[col] = (
-                df[col]
-                .astype(str)
-                .str.replace(",", "", regex=False)
-                .str.strip()
-                .replace("", "0")
-                .astype(float)
-            )
+    for col in df.columns:
+
+        serie = df[col].astype(str)
+
+        serie = (
+            serie
+            .str.replace(".", "", regex=False)   # remove separador de milhar
+            .str.replace(",", ".", regex=False)  # vírgula vira decimal
+            .str.strip()
+        )
+
+        convertido = pd.to_numeric(serie, errors="coerce")
+
+        # só converte se existir valor numérico na coluna
+        if convertido.notna().sum() > 0:
+            df[col] = convertido
+
     return df
 
 
@@ -96,18 +102,14 @@ def front():
         st.success("Conversão concluída com sucesso!")
         st.subheader("Pré-visualização dos dados")
 
-       
         df_exibicao = df.copy()
 
-        if "Valor Faturas" in df_exibicao.columns:
-            df_exibicao["Valor Faturas"] = df_exibicao["Valor Faturas"].apply(formatar_ptbr)
-
-        if "Quantidade Faturas" in df_exibicao.columns:
-            df_exibicao["Quantidade Faturas"] = df_exibicao["Quantidade Faturas"].apply(formatar_ptbr)
+        for col in df_exibicao.columns:
+            if pd.api.types.is_numeric_dtype(df_exibicao[col]):
+                df_exibicao[col] = df_exibicao[col].apply(formatar_ptbr)
 
         st.dataframe(df_exibicao, use_container_width=True)
 
-        
         output = BytesIO()
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
