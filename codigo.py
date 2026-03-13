@@ -61,16 +61,13 @@ def converter_colunas_float(df):
 
         serie = df[col].astype(str)
 
-        serie = (
-            serie
-            .str.replace(".", "", regex=False)   # remove separador de milhar
-            .str.replace(",", ".", regex=False)  # vírgula vira decimal
-            .str.strip()
-        )
+        # remove separador de milhar e troca vírgula por ponto
+        serie = serie.replace(".", "", regex=True)
+        serie = serie.replace(",", ".", regex=True)
 
         convertido = pd.to_numeric(serie, errors="coerce")
 
-        # só converte se existir valor numérico na coluna
+        # só converte se tiver números na coluna
         if convertido.notna().sum() > 0:
             df[col] = convertido
 
@@ -111,6 +108,7 @@ def front():
         st.dataframe(df_exibicao, use_container_width=True)
 
         output = BytesIO()
+
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
             df.to_excel(writer, index=False)
 
