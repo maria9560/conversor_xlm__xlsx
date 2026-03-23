@@ -54,7 +54,7 @@ def converter_xml_para_df(arquivo_xml):
 
     return df
 def converter_colunas_float(df):
-colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
+    colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
     for col in df.colunas_alvo:
 
         # transforma tudo em string
