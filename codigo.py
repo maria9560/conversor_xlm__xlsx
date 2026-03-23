@@ -73,7 +73,8 @@ def converter_colunas_float(df):
         if convertido.notna().sum() > 0:
             df[col] = convertido
 
-    return df'''
+    return df
+'''
 def converter_colunas_float(df):
     colunas_para_converter = ["Valor Faturas", "Quantidade Faturas"]
     
