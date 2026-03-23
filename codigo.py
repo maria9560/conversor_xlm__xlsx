@@ -78,22 +78,29 @@ def converter_xml_para_df(arquivo_xml):
 def converter_colunas_float(df):
     colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
     
+def converter_colunas_float(df):
+    # Definimos as colunas exatas que devem ser números
+    colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
+    
     for col in colunas_alvo:
         if col in df.columns:
-            # 1. Converte para string e limpa espaços extras
+            # 1. Transformamos em string e limpamos espaços
+            # Exemplo: "1.000,41"
             serie = df[col].astype(str).str.strip()
             
-            # 2. Remove o ponto que separa milhar (ex: 1.000 -> 1000)
-            serie = serie.replace(r'\.', '', regex=True)
+            # 2. IMPORTANTE: Removemos o ponto de milhar para não confundir o Python
+            # "1.000,41" -> "1000,41"
+            serie = serie.str.replace('.', '', regex=False)
             
-            # 3. Troca a vírgula pelo ponto decimal (ex: 1000,41 -> 1000.41)
-            serie = serie.replace(',', '.', regex=True)
+            # 3. Trocamos a vírgula decimal pelo ponto (padrão de programação)
+            # "1000,41" -> "1000.41"
+            serie = serie.str.replace(',', '.', regex=False)
             
-            # 4. Converte para float numérico
+            # 4. Convertemos para float real
+            # Agora o Python entende que é o número MIL e quarenta e um centavos
             df[col] = pd.to_numeric(serie, errors="coerce")
             
     return df
-
 
 
     
