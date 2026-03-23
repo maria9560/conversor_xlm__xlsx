@@ -53,9 +53,9 @@ def converter_xml_para_df(arquivo_xml):
     df = df.iloc[1:].reset_index(drop=True)
 
     return df
-'''def converter_colunas_float(df):
-
-    for col in df.columns:
+def converter_colunas_float(df):
+colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
+    for col in df.colunas_alvo:
 
         # transforma tudo em string
         serie = df[col].astype(str)
@@ -90,7 +90,7 @@ def converter_colunas_float(df):
             df[col] = pd.to_numeric(serie, errors="coerce")
             
     return df
-
+'''
 
 
     
