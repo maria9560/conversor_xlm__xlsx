@@ -64,7 +64,7 @@ def converter_colunas_float(df):
         serie = serie.replace(".", "", regex=True)
 
         # troca vírgula decimal
-        serie = serie.replace(",", ".", regex=True)
+        serie = serie.replace(".", ",", regex=True)
 
         # tenta converter
         convertido = pd.to_numeric(serie, errors="coerce")
