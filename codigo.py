@@ -53,26 +53,20 @@ def converter_xml_para_df(arquivo_xml):
     df = df.iloc[1:].reset_index(drop=True)
 
     return df
+
 def converter_colunas_float(df):
-    colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
-    for col in colunas_alvo:
+    colunas_float = ["Valor Faturas", "Quantidade Faturas"]
 
-        # transforma tudo em string
-        serie = df[col].astype(str)
-
-        # remove separador de milhar
-        serie = serie.replace(".", "", regex=True)
-
-        # troca vírgula decimal
-        serie = serie.replace(".", ",", regex=True)
-
-        # tenta converter
-        convertido = pd.to_numeric(serie, errors="coerce")
-
-        # só aplica se realmente tiver números
-        if convertido.notna().sum() > 0:
-            df[col] = convertido
-
+    for col in colunas_float:
+        if col in df.columns:
+            df[col] = (
+                df[col]
+                .astype(str)
+                .str.replace(",", "", regex=False)
+                .str.strip()
+                .replace("", "0")
+                .astype(float)
+            )
     return df
 
 
