@@ -53,7 +53,7 @@ def converter_xml_para_df(arquivo_xml):
     df = df.iloc[1:].reset_index(drop=True)
 
     return df
-def converter_colunas_float(df):
+'''def converter_colunas_float(df):
     colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
     for col in df.colunas_alvo:
 
@@ -76,22 +76,24 @@ def converter_colunas_float(df):
     return df
 '''
 def converter_colunas_float(df):
-    colunas_para_converter = ["Valor Faturas", "Quantidade Faturas"]
+    colunas_alvo = ["Valor Faturas", "Quantidade Faturas"]
     
-    for col in colunas_para_converter:
+    for col in colunas_alvo:
         if col in df.columns:
-            # 1. Converte para string e limpa espaços
+            # 1. Converte para string e limpa espaços extras
             serie = df[col].astype(str).str.strip()
             
-            # 2. Lógica para formato PT-BR (1.234,56 -> 1234.56)
-            # Remove o ponto (milhar) e troca a vírgula pelo ponto (decimal)
-            serie = serie.replace(r'\.', '', regex=True).replace(',', '.', regex=True)
+            # 2. Remove o ponto que separa milhar (ex: 1.000 -> 1000)
+            serie = serie.replace(r'\.', '', regex=True)
             
-            # 3. Converte para numérico (o que não for número vira NaN)
+            # 3. Troca a vírgula pelo ponto decimal (ex: 1000,41 -> 1000.41)
+            serie = serie.replace(',', '.', regex=True)
+            
+            # 4. Converte para float numérico
             df[col] = pd.to_numeric(serie, errors="coerce")
             
     return df
-'''
+
 
 
     
